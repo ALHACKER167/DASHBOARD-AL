@@ -152,6 +152,7 @@
     animation:shake 0.4s;
   }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ===== MAIN APP ===== */
   #app { display:none; position:relative; z-index:1; min-height:100vh; }
@@ -484,7 +485,11 @@
 <!-- LOGIN PAGE -->
 <div id="login-page">
   <div class="login-glow"></div>
-  <div class="login-box">
+  <div id="loading-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,8,16,0.9);z-index:10;border-radius:16px;flex-direction:column;gap:16px;">
+    <div style="width:36px;height:36px;border:3px solid rgba(30,136,229,0.3);border-top-color:var(--blue2);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <div style="font-size:12px;letter-spacing:2px;color:var(--blue3);text-transform:uppercase;">Memuat Sesi...</div>
+  </div>
+  <div class="login-box" style="position:relative;overflow:hidden;"  id="login-box-inner">
     <div class="login-title">DASHBOARD AL</div>
     <div class="login-sub">Finance Control System</div>
     <label class="login-label">Username</label>
@@ -749,44 +754,87 @@ const _c = (function(){
   return { u: d(u,k), p: d(p,k) };
 })();
 
-// ===== STORAGE KEY =====
-const STORE_KEY = 'dashboard_al_v2_data';
+// ===== STORAGE KEYS =====
+const STORE_KEY = 'dashboard_al_transactions';
+const SESSION_KEY = 'dashboard_al_session';
 
 // ===== STATE =====
 let transactions = [];
 let currentUser = null;
 let filteredData = [];
 
-// ===== STORAGE =====
-function saveData() {
+// ===== CLOUD STORAGE =====
+async function saveData() {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ transactions }));
-  } catch(e) {}
+    await window.storage.set(STORE_KEY, JSON.stringify({ transactions }), true);
+  } catch(e) { console.warn('Save error:', e); }
 }
-function loadData() {
+
+async function loadData() {
   try {
-    const d = localStorage.getItem(STORE_KEY);
-    if(d) {
-      const parsed = JSON.parse(d);
+    const result = await window.storage.get(STORE_KEY, true);
+    if(result && result.value) {
+      const parsed = JSON.parse(result.value);
       transactions = parsed.transactions || [];
+    } else {
+      transactions = [];
     }
   } catch(e) { transactions = []; }
 }
 
+async function saveSession(username) {
+  try {
+    await window.storage.set(SESSION_KEY, JSON.stringify({ user: username, ts: Date.now() }));
+  } catch(e) {}
+}
+
+async function clearSession() {
+  try {
+    await window.storage.delete(SESSION_KEY);
+  } catch(e) {}
+}
+
+async function checkSession() {
+  try {
+    const result = await window.storage.get(SESSION_KEY);
+    if(result && result.value) {
+      const sess = JSON.parse(result.value);
+      // Session valid 7 hari
+      if(sess.user && (Date.now() - sess.ts) < 7 * 24 * 60 * 60 * 1000) {
+        return sess.user;
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+function showApp(username) {
+  currentUser = username;
+  const overlay = document.getElementById('loading-overlay');
+  if(overlay) overlay.style.display = 'none';
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sb-username-display').textContent = username;
+  document.getElementById('sb-avatar-initial').textContent = username[0].toUpperCase();
+  updateDate();
+  setInterval(updateDate, 1000);
+}
+
 // ===== LOGIN =====
-function doLogin() {
+async function doLogin() {
   const u = document.getElementById('inp-user').value.trim();
   const p = document.getElementById('inp-pass').value;
   if(u === _c.u && p === _c.p) {
-    currentUser = u;
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('sb-username-display').textContent = u;
-    document.getElementById('sb-avatar-initial').textContent = u[0].toUpperCase();
-    loadData();
+    // Tampilkan loading
+    const btn = document.querySelector('.login-btn');
+    btn.textContent = 'MEMUAT...';
+    btn.disabled = true;
+    await saveSession(u);
+    await loadData();
+    showApp(u);
     updateAll();
-    updateDate();
-    setInterval(updateDate, 1000);
+    btn.textContent = 'MASUK';
+    btn.disabled = false;
   } else {
     const err = document.getElementById('login-err');
     err.style.display = 'block';
@@ -797,7 +845,8 @@ function doLogin() {
 document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('inp-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inp-pass').focus(); });
 
-function doLogout() {
+async function doLogout() {
+  await clearSession();
   currentUser = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
@@ -805,6 +854,20 @@ function doLogout() {
   document.getElementById('inp-pass').value = '';
   document.getElementById('login-err').style.display = 'none';
 }
+
+// ===== AUTO LOGIN (cek session saat halaman dibuka) =====
+(async function initApp() {
+  const savedUser = await checkSession();
+  if(savedUser) {
+    await loadData();
+    showApp(savedUser);
+    updateAll();
+  } else {
+    // Sembunyikan loading overlay, tampilkan form login
+    const overlay = document.getElementById('loading-overlay');
+    if(overlay) overlay.style.display = 'none';
+  }
+})();
 
 // ===== DATE =====
 function updateDate() {
@@ -841,7 +904,7 @@ function fmtDate(d) {
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
 // ===== TRANSAKSI =====
-function tambahTransaksi() {
+async function tambahTransaksi() {
   const tgl = document.getElementById('tx-tanggal').value;
   const user = document.getElementById('tx-username').value.trim();
   const tipe = document.getElementById('tx-tipe').value;
@@ -864,7 +927,7 @@ function tambahTransaksi() {
     createdAt: new Date().toISOString()
   };
   transactions.unshift(tx);
-  saveData();
+  await saveData();
   updateAll();
   clearForm();
   showToast(`✓ ${tipe === 'deposit' ? 'Deposit' : 'Withdraw'} ${fmtRp(jumlah)} berhasil ditambahkan!`);
@@ -878,10 +941,10 @@ function clearForm() {
   document.getElementById('tx-ket').value = '';
 }
 
-function hapusTransaksi(id) {
+async function hapusTransaksi(id) {
   if(!confirm('Hapus transaksi ini?')) return;
   transactions = transactions.filter(t => t.id !== id);
-  saveData();
+  await saveData();
   updateAll();
   applyFilter();
   showToast('Transaksi dihapus.');
