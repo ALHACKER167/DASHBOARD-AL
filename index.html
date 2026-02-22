@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DASHBOARD AL — Finance Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy: #050d1f;
+    --navy2: #0a1628;
+    --navy3: #0f2040;
+    --blue: #1565c0;
+    --blue2: #1e88e5;
+    --blue3: #42a5f5;
+    --cyan: #00b8d9;
+    --gold: #ffd600;
+    --gold2: #ffab00;
+    --white: #ffffff;
+    --white2: #e3eaf5;
+    --white3: #b0c4de;
+    --green: #00e676;
+    --red: #ff1744;
+    --card: rgba(10,22,40,0.85);
+    --border: rgba(30,136,229,0.25);
+    --border2: rgba(255,214,0,0.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--navy);
+    color: var(--white2);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG GRID */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      linear-gradient(rgba(21,101,192,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(21,101,192,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index:0;
+    pointer-events:none;
+  }
+  body::after {
+    content:'';
+    position:fixed;
+    top:-30%;left:-10%;
+    width:60%;height:80%;
+    background: radial-gradient(ellipse, rgba(21,101,192,0.12) 0%, transparent 70%);
+    z-index:0;pointer-events:none;
+  }
+
+  /* ===== LOGIN PAGE ===== */
+  #login-page {
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    z-index:100;
+    background: linear-gradient(135deg, #020810 0%, #050d1f 50%, #0a1a35 100%);
+  }
+  .login-glow {
+    position:absolute;
+    width:500px;height:500px;
+    background: radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(1.1);opacity:1} }
+
+  .login-box {
+    position:relative;
+    background: linear-gradient(160deg, rgba(10,22,40,0.97) 0%, rgba(5,13,31,0.97) 100%);
+    border:1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 48px 44px;
+    width: 420px;
+    box-shadow: 0 0 60px rgba(21,101,192,0.2), 0 0 120px rgba(0,0,0,0.5);
+    animation: loginSlide 0.6s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes loginSlide { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+  .login-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size: 42px;
+    letter-spacing: 4px;
+    text-align:center;
+    background: linear-gradient(135deg, var(--white) 0%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom:4px;
+  }
+  .login-sub {
+    text-align:center;
+    font-size:11px;
+    letter-spacing:3px;
+    color: var(--blue3);
+    text-transform:uppercase;
+    margin-bottom:36px;
+  }
+  .login-label {
+    font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--white3);
+    margin-bottom:8px;display:block;
+  }
+  .login-input {
+    width:100%;
+    background: rgba(255,255,255,0.04);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    color:var(--white);
+    font-family:'Exo 2',sans-serif;
+    font-size:15px;
+    outline:none;
+    transition:all 0.3s;
+    margin-bottom:20px;
+  }
+  .login-input:focus { border-color:var(--blue2); background:rgba(30,136,229,0.08); box-shadow:0 0 0 3px rgba(30,136,229,0.1); }
+  .login-btn {
+    width:100%;
+    padding:15px;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%);
+    border:none;border-radius:8px;
+    color:var(--white);
+    font-family:'Bebas Neue',sans-serif;
+    font-size:20px;letter-spacing:3px;
+    cursor:pointer;
+    transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .login-btn::after {
+    content:'';position:absolute;inset:0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,214,0,0.15) 100%);
+    opacity:0;transition:0.3s;
+  }
+  .login-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(21,101,192,0.4); }
+  .login-btn:hover::after { opacity:1; }
+  .login-btn:active { transform:translateY(0); }
+  .login-err {
+    text-align:center;
+    color:var(--red);
+    font-size:13px;
+    margin-top:12px;
+    display:none;
+    animation:shake 0.4s;
+  }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  /* ===== MAIN APP ===== */
+  #app { display:none; position:relative; z-index:1; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    position:fixed;left:0;top:0;bottom:0;
+    width:240px;
+    background: linear-gradient(180deg, rgba(10,22,40,0.98) 0%, rgba(5,13,31,0.98) 100%);
+    border-right:1px solid var(--border);
+    z-index:50;
+    display:flex;flex-direction:column;
+    padding:0;
+  }
+  .sb-logo {
+    padding:28px 24px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .sb-logo-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:28px;letter-spacing:3px;
+    background: linear-gradient(135deg, var(--white) 0%, var(--gold) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .sb-logo-sub { font-size:10px;letter-spacing:2px;color:var(--blue3);text-transform:uppercase; }
+  .sb-user {
+    padding:16px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:12px;
+  }
+  .sb-avatar {
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,var(--blue) 0%,var(--gold) 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--navy);
+  }
+  .sb-username { font-size:13px;font-weight:600;color:var(--white); }
+  .sb-role { font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase; }
+  .sb-nav { flex:1;padding:16px 12px;overflow-y:auto; }
+  .sb-section { font-size:9px;letter-spacing:2px;color:var(--blue3);text-transform:uppercase;padding:8px 12px 4px; }
+  .sb-item {
+    display:flex;align-items:center;gap:12px;
+    padding:11px 14px;border-radius:8px;
+    cursor:pointer;margin-bottom:2px;
+    transition:all 0.2s;color:var(--white3);font-size:13px;font-weight:500;
+  }
+  .sb-item:hover { background:rgba(30,136,229,0.12);color:var(--white); }
+  .sb-item.active { background:linear-gradient(135deg,rgba(21,101,192,0.3) 0%,rgba(30,136,229,0.15) 100%);color:var(--gold);border-left:2px solid var(--gold); }
+  .sb-item svg { width:16px;height:16px;flex-shrink:0; }
+  .sb-logout {
+    padding:16px 12px;
+    border-top:1px solid var(--border);
+  }
+  .sb-logout-btn {
+    width:100%;padding:10px;
+    background:rgba(255,23,68,0.1);
+    border:1px solid rgba(255,23,68,0.25);
+    border-radius:8px;color:var(--red);
+    font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;
+    cursor:pointer;transition:all 0.2s;text-transform:uppercase;
+  }
+  .sb-logout-btn:hover { background:rgba(255,23,68,0.2);box-shadow:0 0 16px rgba(255,23,68,0.2); }
+
+  /* MAIN CONTENT */
+  .main { margin-left:240px; padding:32px 36px; min-height:100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:32px;
+  }
+  .page-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:36px;letter-spacing:3px;
+    background:linear-gradient(135deg,var(--white) 0%,var(--blue3) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .topbar-right { display:flex;align-items:center;gap:12px; }
+  .date-display {
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--white3);
+    background:rgba(255,255,255,0.04);
+    padding:8px 14px;border-radius:8px;
+    border:1px solid var(--border);
+  }
+
+  /* PAGES */
+  .page { display:none; }
+  .page.active { display:block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:24px;
+  }
+  .stat-card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:22px 20px;
+    position:relative;overflow:hidden;
+    transition:transform 0.2s;
+  }
+  .stat-card:hover { transform:translateY(-3px); }
+  .stat-card::before {
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--blue) 0%,var(--gold) 100%);
+  }
+  .stat-card.green::before { background:linear-gradient(90deg,#00c853 0%,#00e676 100%); }
+  .stat-card.red::before { background:linear-gradient(90deg,#c62828 0%,var(--red) 100%); }
+  .stat-card.gold::before { background:linear-gradient(90deg,var(--gold2) 0%,var(--gold) 100%); }
+  .stat-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--white3);margin-bottom:10px; }
+  .stat-value {
+    font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;
+    color:var(--white);
+  }
+  .stat-value.green { color:var(--green); }
+  .stat-value.red { color:var(--red); }
+  .stat-value.gold { color:var(--gold); }
+  .stat-sub { font-size:11px;color:var(--white3);margin-top:6px; }
+
+  /* ROW 2 - TIME STATS */
+  .time-stats-grid {
+    display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;
+  }
+  .time-stat-card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;padding:20px;
+  }
+  .ts-header {
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .ts-title { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue3); }
+  .ts-badge {
+    font-size:9px;letter-spacing:1px;text-transform:uppercase;
+    padding:3px 8px;border-radius:20px;
+  }
+  .ts-badge.day { background:rgba(0,184,217,0.15);color:var(--cyan); }
+  .ts-badge.week { background:rgba(255,214,0,0.15);color:var(--gold); }
+  .ts-badge.month { background:rgba(30,136,229,0.15);color:var(--blue3); }
+  .ts-row { display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05); }
+  .ts-row:last-child { border-bottom:none; }
+  .ts-name { font-size:12px;color:var(--white3); }
+  .ts-depo { font-size:14px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace; }
+  .ts-wd { font-size:14px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace; }
+
+  /* FORM SECTION */
+  .form-section {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px;
+    margin-bottom:24px;
+  }
+  .form-title {
+    font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;
+    color:var(--gold);margin-bottom:20px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .form-title::after { content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2) 0%,transparent 100%); }
+  .form-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:end; }
+  .form-group { display:flex;flex-direction:column;gap:6px; }
+  .form-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--white3); }
+  .form-input, .form-select {
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    color:var(--white);
+    font-family:'Exo 2',sans-serif;font-size:14px;
+    outline:none;transition:all 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color:var(--blue2);background:rgba(30,136,229,0.08); }
+  .form-select { cursor:pointer; }
+  .form-select option { background:var(--navy2);color:var(--white); }
+  .form-btn {
+    padding:12px 24px;
+    background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 100%);
+    border:none;border-radius:8px;
+    color:var(--white);
+    font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;
+    cursor:pointer;transition:all 0.2s;white-space:nowrap;
+  }
+  .form-btn:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(21,101,192,0.4); }
+  .form-btn.danger {
+    background:linear-gradient(135deg,#b71c1c 0%,var(--red) 100%);
+  }
+  .form-btn.gold-btn {
+    background:linear-gradient(135deg,var(--gold2) 0%,var(--gold) 100%);
+    color:var(--navy);
+  }
+
+  /* HISTORY TABLE */
+  .table-section {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:24px;
+  }
+  .table-header {
+    padding:20px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .table-title {
+    font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--white);
+  }
+  .table-actions { display:flex;gap:10px; }
+  .tbl-btn {
+    padding:8px 16px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:transparent;
+    color:var(--white3);
+    font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;
+    cursor:pointer;transition:all 0.2s;letter-spacing:1px;text-transform:uppercase;
+  }
+  .tbl-btn:hover { border-color:var(--gold);color:var(--gold);background:rgba(255,214,0,0.06); }
+  .tbl-btn.export { border-color:var(--green);color:var(--green); }
+  .tbl-btn.export:hover { background:rgba(0,230,118,0.06); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%;border-collapse:collapse; }
+  th {
+    padding:12px 16px;
+    text-align:left;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--blue3);font-weight:600;
+    border-bottom:1px solid var(--border);
+  }
+  td {
+    padding:12px 16px;font-size:13px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(30,136,229,0.04); }
+  .badge {
+    display:inline-flex;align-items:center;
+    padding:3px 10px;border-radius:20px;
+    font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  }
+  .badge-depo { background:rgba(0,230,118,0.15);color:var(--green); }
+  .badge-wd { background:rgba(255,23,68,0.15);color:var(--red); }
+  .amount-depo { color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700; }
+  .amount-wd { color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:700; }
+  .empty-table {
+    text-align:center;padding:48px;color:var(--white3);font-size:14px;
+  }
+  
+  /* FILTER ROW */
+  .filter-row {
+    padding:16px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  }
+  .filter-label { font-size:11px;letter-spacing:1px;color:var(--white3);text-transform:uppercase; }
+  .filter-input, .filter-select {
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);border-radius:6px;
+    padding:7px 12px;color:var(--white);font-family:'Exo 2',sans-serif;font-size:12px;
+    outline:none;
+  }
+  .filter-select option { background:var(--navy2); }
+  .filter-btn {
+    padding:7px 16px;
+    background:rgba(30,136,229,0.15);
+    border:1px solid var(--blue);border-radius:6px;
+    color:var(--blue3);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;
+    cursor:pointer;transition:all 0.2s;letter-spacing:1px;
+  }
+  .filter-btn:hover { background:rgba(30,136,229,0.3);color:var(--white); }
+
+  /* TOAST */
+  .toast {
+    position:fixed;top:20px;right:20px;z-index:999;
+    background:linear-gradient(135deg,rgba(10,22,40,0.97) 0%,rgba(5,13,31,0.97) 100%);
+    border:1px solid var(--border);border-left:3px solid var(--green);
+    border-radius:10px;padding:14px 20px;
+    font-size:13px;color:var(--white);
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    transform:translateX(120%);transition:transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    max-width:300px;
+  }
+  .toast.show { transform:translateX(0); }
+  .toast.err { border-left-color:var(--red); }
+
+  /* SUMMARY SECTION */
+  .summary-mini {
+    display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;
+  }
+  .sm-card {
+    flex:1;min-width:140px;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:10px;padding:14px 16px;text-align:center;
+  }
+  .sm-label { font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--white3);margin-bottom:6px; }
+  .sm-val { font-family:'Bebas Neue',sans-serif;font-size:24px; }
+  
+  /* DELETE btn */
+  .del-btn {
+    background:none;border:none;cursor:pointer;
+    color:rgba(255,23,68,0.5);font-size:16px;transition:color 0.2s;padding:2px 6px;
+  }
+  .del-btn:hover { color:var(--red); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:4px;height:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--blue);border-radius:2px; }
+
+  /* RESPONSIVE */
+  @media (max-width:1200px) {
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .form-grid { grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:900px) {
+    .sidebar { width:60px; }
+    .sb-logo-title, .sb-logo-sub, .sb-username, .sb-role, .sb-item span, .sb-section, .sb-logout-btn { display:none; }
+    .main { margin-left:60px;padding:20px; }
+    .time-stats-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <div class="login-title">DASHBOARD AL</div>
+    <div class="login-sub">Finance Control System</div>
+    <label class="login-label">Username</label>
+    <input class="login-input" id="inp-user" type="text" placeholder="Masukkan username" autocomplete="off">
+    <label class="login-label">Password</label>
+    <input class="login-input" id="inp-pass" type="password" placeholder="Masukkan password" autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">MASUK</button>
+    <div class="login-err" id="login-err">Username atau password salah!</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-title">DASHBOARD AL</div>
+      <div class="sb-logo-sub">Finance Control</div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-avatar-initial">A</div>
+      <div>
+        <div class="sb-username" id="sb-username-display">User</div>
+        <div class="sb-role">Administrator</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Menu</div>
+      <div class="sb-item active" onclick="showPage('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </div>
+      <div class="sb-item" onclick="showPage('transaksi')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19,12 12,19 5,12"/></svg>
+        <span>Input Transaksi</span>
+      </div>
+      <div class="sb-item" onclick="showPage('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        <span>History</span>
+      </div>
+      <div class="sb-section">Data</div>
+      <div class="sb-item" onclick="showPage('users')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Users</span>
+      </div>
+    </nav>
+    <div class="sb-logout">
+      <button class="sb-logout-btn" onclick="doLogout()">⏻ Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">OVERVIEW</div>
+      <div class="topbar-right">
+        <div class="date-display" id="date-display"></div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Total Deposit</div>
+          <div class="stat-value green" id="ov-total-depo">Rp 0</div>
+          <div class="stat-sub" id="ov-jml-depo">0 transaksi</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Total Withdraw</div>
+          <div class="stat-value red" id="ov-total-wd">Rp 0</div>
+          <div class="stat-sub" id="ov-jml-wd">0 transaksi</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Net Balance</div>
+          <div class="stat-value gold" id="ov-net">Rp 0</div>
+          <div class="stat-sub">Deposit - Withdraw</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Transaksi</div>
+          <div class="stat-value" id="ov-total-tx">0</div>
+          <div class="stat-sub" id="ov-users">0 user</div>
+        </div>
+      </div>
+
+      <div class="time-stats-grid">
+        <!-- HARIAN -->
+        <div class="time-stat-card">
+          <div class="ts-header">
+            <span class="ts-title">Statistik Harian</span>
+            <span class="ts-badge day">Hari Ini</span>
+          </div>
+          <div class="ts-row"><span class="ts-name">Deposit Hari Ini</span><span class="ts-depo" id="day-depo">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Withdraw Hari Ini</span><span class="ts-wd" id="day-wd">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Jumlah Transaksi</span><span style="color:var(--white3);font-size:13px;font-family:'JetBrains Mono',monospace;" id="day-count">0</span></div>
+        </div>
+        <!-- MINGGUAN -->
+        <div class="time-stat-card">
+          <div class="ts-header">
+            <span class="ts-title">Statistik Mingguan</span>
+            <span class="ts-badge week">7 Hari</span>
+          </div>
+          <div class="ts-row"><span class="ts-name">Deposit Minggu Ini</span><span class="ts-depo" id="week-depo">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Withdraw Minggu Ini</span><span class="ts-wd" id="week-wd">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Jumlah Transaksi</span><span style="color:var(--white3);font-size:13px;font-family:'JetBrains Mono',monospace;" id="week-count">0</span></div>
+        </div>
+        <!-- BULANAN -->
+        <div class="time-stat-card">
+          <div class="ts-header">
+            <span class="ts-title">Statistik Bulanan</span>
+            <span class="ts-badge month">Bulan Ini</span>
+          </div>
+          <div class="ts-row"><span class="ts-name">Deposit Bulan Ini</span><span class="ts-depo" id="month-depo">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Withdraw Bulan Ini</span><span class="ts-wd" id="month-wd">Rp 0</span></div>
+          <div class="ts-row"><span class="ts-name">Jumlah Transaksi</span><span style="color:var(--white3);font-size:13px;font-family:'JetBrains Mono',monospace;" id="month-count">0</span></div>
+        </div>
+      </div>
+
+      <!-- RECENT TRANSACTIONS -->
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">TRANSAKSI TERBARU</span>
+          <div class="table-actions">
+            <button class="tbl-btn" onclick="showPage('history')">Lihat Semua</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th><th>Username</th><th>Tipe</th><th>Jumlah</th><th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSAKSI PAGE -->
+    <div class="page" id="page-transaksi">
+      <div class="form-section">
+        <div class="form-title">Input Transaksi Baru</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tanggal</label>
+            <input class="form-input" type="date" id="tx-tanggal">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input class="form-input" type="text" id="tx-username" placeholder="contoh: user123">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipe Transaksi</label>
+            <select class="form-select" id="tx-tipe">
+              <option value="">-- Pilih --</option>
+              <option value="deposit">💰 Deposit</option>
+              <option value="withdraw">💸 Withdraw</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jumlah (Rp)</label>
+            <input class="form-input" type="number" id="tx-jumlah" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Keterangan</label>
+            <input class="form-input" type="text" id="tx-ket" placeholder="opsional...">
+          </div>
+          <div class="form-group" style="grid-column:span 3;display:flex;gap:12px;align-items:flex-end;">
+            <button class="form-btn" onclick="tambahTransaksi()">+ TAMBAH TRANSAKSI</button>
+            <button class="form-btn gold-btn" onclick="clearForm()">BERSIHKAN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- USER SUMMARY -->
+      <div class="form-section">
+        <div class="form-title">Ringkasan Per User</div>
+        <div id="user-summary-list">
+          <p style="color:var(--white3);font-size:13px;">Belum ada data transaksi.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">HISTORY TRANSAKSI</span>
+          <div class="table-actions">
+            <button class="tbl-btn export" onclick="exportExcel()">📥 Export Excel</button>
+          </div>
+        </div>
+        <!-- FILTER -->
+        <div class="filter-row">
+          <span class="filter-label">Filter:</span>
+          <input class="filter-input" type="date" id="f-dari" placeholder="Dari">
+          <input class="filter-input" type="date" id="f-sampai" placeholder="Sampai">
+          <input class="filter-input" type="text" id="f-user" placeholder="Username" style="width:120px;">
+          <select class="filter-select" id="f-tipe">
+            <option value="">Semua Tipe</option>
+            <option value="deposit">Deposit</option>
+            <option value="withdraw">Withdraw</option>
+          </select>
+          <button class="filter-btn" onclick="applyFilter()">🔍 Cari</button>
+          <button class="filter-btn" onclick="resetFilter()">✕ Reset</button>
+        </div>
+        <!-- SUMMARY MINI -->
+        <div class="summary-mini" style="padding:12px 24px;gap:12px;" id="history-summary">
+          <div class="sm-card"><div class="sm-label">Total Deposit</div><div class="sm-val" style="color:var(--green)" id="hs-depo">Rp 0</div></div>
+          <div class="sm-card"><div class="sm-label">Total Withdraw</div><div class="sm-val" style="color:var(--red)" id="hs-wd">Rp 0</div></div>
+          <div class="sm-card"><div class="sm-label">Net</div><div class="sm-val" style="color:var(--gold)" id="hs-net">Rp 0</div></div>
+          <div class="sm-card"><div class="sm-label">Jumlah Data</div><div class="sm-val" id="hs-count">0</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Tanggal</th><th>Username</th><th>Tipe</th><th>Jumlah</th><th>Keterangan</th><th>Input Oleh</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS PAGE -->
+    <div class="page" id="page-users">
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">DATA USER TRANSAKSI</span>
+          <div class="table-actions">
+            <button class="tbl-btn export" onclick="exportExcelUsers()">📥 Export Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Username</th><th>Total Deposit</th><th>Total Withdraw</th><th>Net Balance</th><th>Jumlah Transaksi</th></tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ===== ENCRYPTED CREDENTIALS =====
+// Credentials are obfuscated and encoded, not stored in plain text
+const _c = (function(){
+  const k = [68,65,83,72,66,79,65,82,68];
+  const u = [55,57,115,53,112,99,99,118,95,118,116,113,98,88,111,115,93,49,104,50,50];
+  const p = [56,88,99,5,112,118,96,104,93,95,123,104,55,55,64,56,103,90,92,105,57];
+  const d = (a,b) => a.map((v,i) => String.fromCharCode(v ^ b[i%b.length])).join('');
+  return { u: d(u,k), p: d(p,k) };
+})();
+
+// ===== STORAGE KEY =====
+const STORE_KEY = 'dashboard_al_v2_data';
+
+// ===== STATE =====
+let transactions = [];
+let currentUser = null;
+let filteredData = [];
+
+// ===== STORAGE =====
+function saveData() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ transactions }));
+  } catch(e) {}
+}
+function loadData() {
+  try {
+    const d = localStorage.getItem(STORE_KEY);
+    if(d) {
+      const parsed = JSON.parse(d);
+      transactions = parsed.transactions || [];
+    }
+  } catch(e) { transactions = []; }
+}
+
+// ===== LOGIN =====
+function doLogin() {
+  const u = document.getElementById('inp-user').value.trim();
+  const p = document.getElementById('inp-pass').value;
+  if(u === _c.u && p === _c.p) {
+    currentUser = u;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sb-username-display').textContent = u;
+    document.getElementById('sb-avatar-initial').textContent = u[0].toUpperCase();
+    loadData();
+    updateAll();
+    updateDate();
+    setInterval(updateDate, 1000);
+  } else {
+    const err = document.getElementById('login-err');
+    err.style.display = 'block';
+    err.style.animation = 'none';
+    setTimeout(() => err.style.animation = 'shake 0.4s', 10);
+  }
+}
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('inp-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inp-pass').focus(); });
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ===== DATE =====
+function updateDate() {
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('date-display').textContent = now.toLocaleDateString('id-ID', opts);
+}
+
+// ===== PAGES =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const titles = { overview:'OVERVIEW', transaksi:'INPUT TRANSAKSI', history:'HISTORY', users:'DATA USER' };
+  document.getElementById('page-title').textContent = titles[name] || name.toUpperCase();
+  const idx = { overview:0, transaksi:1, history:2, users:3 };
+  document.querySelectorAll('.sb-item')[idx[name]]?.classList.add('active');
+  if(name==='history') { resetFilter(); renderHistory(transactions); }
+  if(name==='users') renderUsers();
+  if(name==='transaksi') renderUserSummary();
+}
+
+// ===== FORMAT =====
+function fmtRp(n) {
+  if(isNaN(n)||n===null) return 'Rp 0';
+  return 'Rp ' + Math.abs(n).toLocaleString('id-ID');
+}
+function fmtDate(d) {
+  if(!d) return '-';
+  const [y,m,day] = d.split('-');
+  const mo = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${day} ${mo[parseInt(m)-1]} ${y}`;
+}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+// ===== TRANSAKSI =====
+function tambahTransaksi() {
+  const tgl = document.getElementById('tx-tanggal').value;
+  const user = document.getElementById('tx-username').value.trim();
+  const tipe = document.getElementById('tx-tipe').value;
+  const jumlah = parseFloat(document.getElementById('tx-jumlah').value);
+  const ket = document.getElementById('tx-ket').value.trim();
+
+  if(!tgl) { showToast('Tanggal wajib diisi!', true); return; }
+  if(!user) { showToast('Username wajib diisi!', true); return; }
+  if(!tipe) { showToast('Tipe transaksi wajib dipilih!', true); return; }
+  if(!jumlah || jumlah <= 0) { showToast('Jumlah harus lebih dari 0!', true); return; }
+
+  const tx = {
+    id: Date.now() + Math.random().toString(36).slice(2),
+    tanggal: tgl,
+    username: user,
+    tipe,
+    jumlah,
+    keterangan: ket || '-',
+    inputOleh: currentUser,
+    createdAt: new Date().toISOString()
+  };
+  transactions.unshift(tx);
+  saveData();
+  updateAll();
+  clearForm();
+  showToast(`✓ ${tipe === 'deposit' ? 'Deposit' : 'Withdraw'} ${fmtRp(jumlah)} berhasil ditambahkan!`);
+}
+
+function clearForm() {
+  document.getElementById('tx-tanggal').value = todayStr();
+  document.getElementById('tx-username').value = '';
+  document.getElementById('tx-tipe').value = '';
+  document.getElementById('tx-jumlah').value = '';
+  document.getElementById('tx-ket').value = '';
+}
+
+function hapusTransaksi(id) {
+  if(!confirm('Hapus transaksi ini?')) return;
+  transactions = transactions.filter(t => t.id !== id);
+  saveData();
+  updateAll();
+  applyFilter();
+  showToast('Transaksi dihapus.');
+}
+
+// ===== STATS =====
+function calcStats(data) {
+  let totalDepo=0, totalWd=0, cDepo=0, cWd=0;
+  data.forEach(t => {
+    if(t.tipe==='deposit') { totalDepo+=t.jumlah; cDepo++; }
+    else { totalWd+=t.jumlah; cWd++; }
+  });
+  return { totalDepo, totalWd, cDepo, cWd, net: totalDepo-totalWd };
+}
+
+function filterByPeriod(days) {
+  const now = new Date();
+  const cutoff = new Date(now);
+  if(days === 1) {
+    cutoff.setHours(0,0,0,0);
+  } else {
+    cutoff.setDate(now.getDate() - days + 1);
+    cutoff.setHours(0,0,0,0);
+  }
+  const cutStr = cutoff.toISOString().split('T')[0];
+  const todStr = todayStr();
+  return transactions.filter(t => {
+    if(days===1) return t.tanggal === todStr;
+    return t.tanggal >= cutStr && t.tanggal <= todStr;
+  });
+}
+function filterByMonth() {
+  const now = new Date();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const y = now.getFullYear();
+  return transactions.filter(t => t.tanggal && t.tanggal.startsWith(`${y}-${m}`));
+}
+
+function updateAll() {
+  const all = calcStats(transactions);
+  document.getElementById('ov-total-depo').textContent = fmtRp(all.totalDepo);
+  document.getElementById('ov-jml-depo').textContent = `${all.cDepo} transaksi`;
+  document.getElementById('ov-total-wd').textContent = fmtRp(all.totalWd);
+  document.getElementById('ov-jml-wd').textContent = `${all.cWd} transaksi`;
+  document.getElementById('ov-net').textContent = fmtRp(all.net);
+  document.getElementById('ov-total-tx').textContent = transactions.length;
+
+  const users = [...new Set(transactions.map(t=>t.username))];
+  document.getElementById('ov-users').textContent = `${users.length} user`;
+
+  const day = calcStats(filterByPeriod(1));
+  document.getElementById('day-depo').textContent = fmtRp(day.totalDepo);
+  document.getElementById('day-wd').textContent = fmtRp(day.totalWd);
+  document.getElementById('day-count').textContent = day.cDepo+day.cWd;
+
+  const week = calcStats(filterByPeriod(7));
+  document.getElementById('week-depo').textContent = fmtRp(week.totalDepo);
+  document.getElementById('week-wd').textContent = fmtRp(week.totalWd);
+  document.getElementById('week-count').textContent = week.cDepo+week.cWd;
+
+  const month = calcStats(filterByMonth());
+  document.getElementById('month-depo').textContent = fmtRp(month.totalDepo);
+  document.getElementById('month-wd').textContent = fmtRp(month.totalWd);
+  document.getElementById('month-count').textContent = month.cDepo+month.cWd;
+
+  renderRecent();
+  renderUserSummary();
+}
+
+function renderRecent() {
+  const tbody = document.getElementById('recent-tbody');
+  const data = transactions.slice(0, 10);
+  if(!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Belum ada transaksi</td></tr>'; return; }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white3)">${fmtDate(t.tanggal)}</td>
+      <td style="font-weight:600;color:var(--white)">${t.username}</td>
+      <td><span class="badge ${t.tipe==='deposit'?'badge-depo':'badge-wd'}">${t.tipe}</span></td>
+      <td class="${t.tipe==='deposit'?'amount-depo':'amount-wd'}">${fmtRp(t.jumlah)}</td>
+      <td style="color:var(--white3);font-size:12px">${t.keterangan}</td>
+    </tr>
+  `).join('');
+}
+
+function renderUserSummary() {
+  const users = {};
+  transactions.forEach(t => {
+    if(!users[t.username]) users[t.username] = { depo:0, wd:0, cnt:0 };
+    if(t.tipe==='deposit') users[t.username].depo += t.jumlah;
+    else users[t.username].wd += t.jumlah;
+    users[t.username].cnt++;
+  });
+  const el = document.getElementById('user-summary-list');
+  const entries = Object.entries(users);
+  if(!entries.length) { el.innerHTML = '<p style="color:var(--white3);font-size:13px;">Belum ada data transaksi.</p>'; return; }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+      ${entries.map(([u,d]) => `
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;color:var(--white);margin-bottom:10px;font-size:14px;">👤 ${u}</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;">
+            <span style="color:var(--white3)">Deposit</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace;">${fmtRp(d.depo)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;">
+            <span style="color:var(--white3)">Withdraw</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace;">${fmtRp(d.wd)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;border-top:1px solid var(--border);padding-top:6px;margin-top:6px;">
+            <span style="color:var(--white3)">Net</span><span style="color:var(--gold);font-family:'JetBrains Mono',monospace;">${fmtRp(d.depo-d.wd)}</span>
+          </div>
+          <div style="font-size:10px;color:var(--white3);margin-top:8px;">${d.cnt} transaksi total</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ===== HISTORY =====
+function renderHistory(data) {
+  filteredData = data;
+  const tbody = document.getElementById('history-tbody');
+  const s = calcStats(data);
+  document.getElementById('hs-depo').textContent = fmtRp(s.totalDepo);
+  document.getElementById('hs-wd').textContent = fmtRp(s.totalWd);
+  document.getElementById('hs-net').textContent = fmtRp(s.net);
+  document.getElementById('hs-count').textContent = data.length;
+
+  if(!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Tidak ada data ditemukan</td></tr>'; return; }
+  tbody.innerHTML = data.map((t,i) => `
+    <tr>
+      <td style="color:var(--white3);font-size:12px">${i+1}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white3)">${fmtDate(t.tanggal)}</td>
+      <td style="font-weight:600;color:var(--white)">${t.username}</td>
+      <td><span class="badge ${t.tipe==='deposit'?'badge-depo':'badge-wd'}">${t.tipe}</span></td>
+      <td class="${t.tipe==='deposit'?'amount-depo':'amount-wd'}">${fmtRp(t.jumlah)}</td>
+      <td style="color:var(--white3);font-size:12px">${t.keterangan}</td>
+      <td style="color:var(--blue3);font-size:11px">${t.inputOleh||'-'}</td>
+      <td><button class="del-btn" onclick="hapusTransaksi('${t.id}')">🗑</button></td>
+    </tr>
+  `).join('');
+}
+
+function applyFilter() {
+  const dari = document.getElementById('f-dari').value;
+  const sampai = document.getElementById('f-sampai').value;
+  const user = document.getElementById('f-user').value.trim().toLowerCase();
+  const tipe = document.getElementById('f-tipe').value;
+  let data = [...transactions];
+  if(dari) data = data.filter(t => t.tanggal >= dari);
+  if(sampai) data = data.filter(t => t.tanggal <= sampai);
+  if(user) data = data.filter(t => t.username.toLowerCase().includes(user));
+  if(tipe) data = data.filter(t => t.tipe === tipe);
+  renderHistory(data);
+}
+function resetFilter() {
+  document.getElementById('f-dari').value = '';
+  document.getElementById('f-sampai').value = '';
+  document.getElementById('f-user').value = '';
+  document.getElementById('f-tipe').value = '';
+  renderHistory(transactions);
+}
+
+// ===== USERS PAGE =====
+function renderUsers() {
+  const users = {};
+  transactions.forEach(t => {
+    if(!users[t.username]) users[t.username] = { depo:0, wd:0, cnt:0 };
+    if(t.tipe==='deposit') users[t.username].depo += t.jumlah;
+    else users[t.username].wd += t.jumlah;
+    users[t.username].cnt++;
+  });
+  const tbody = document.getElementById('users-tbody');
+  const entries = Object.entries(users);
+  if(!entries.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Belum ada data user</td></tr>'; return; }
+  tbody.innerHTML = entries.sort((a,b)=>b[1].depo-a[1].depo).map(([u,d]) => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">👤 ${u}</td>
+      <td class="amount-depo">${fmtRp(d.depo)}</td>
+      <td class="amount-wd">${fmtRp(d.wd)}</td>
+      <td style="color:${d.depo-d.wd>=0?'var(--gold)':'var(--red)'};font-family:'JetBrains Mono',monospace;font-weight:700">${fmtRp(d.depo-d.wd)}</td>
+      <td style="color:var(--white3)">${d.cnt} transaksi</td>
+    </tr>
+  `).join('');
+}
+
+// ===== EXPORT EXCEL =====
+function exportExcel() {
+  const data = filteredData.length ? filteredData : transactions;
+  if(!data.length) { showToast('Tidak ada data untuk diekspor!', true); return; }
+  const ws_data = [
+    ['No','Tanggal','Username','Tipe','Jumlah (Rp)','Keterangan','Input Oleh'],
+    ...data.map((t,i) => [i+1, t.tanggal, t.username, t.tipe, t.jumlah, t.keterangan, t.inputOleh||'-'])
+  ];
+  const s = calcStats(data);
+  ws_data.push([]);
+  ws_data.push(['','','','TOTAL DEPOSIT','',fmtRp(s.totalDepo)]);
+  ws_data.push(['','','','TOTAL WITHDRAW','',fmtRp(s.totalWd)]);
+  ws_data.push(['','','','NET BALANCE','',fmtRp(s.net)]);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = [{wch:5},{wch:14},{wch:16},{wch:10},{wch:16},{wch:24},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'History Transaksi');
+  const fname = `Dashboard_AL_${todayStr()}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast(`✓ Excel berhasil diexport: ${fname}`);
+}
+function exportExcelUsers() {
+  const users = {};
+  transactions.forEach(t => {
+    if(!users[t.username]) users[t.username] = { depo:0, wd:0, cnt:0 };
+    if(t.tipe==='deposit') users[t.username].depo += t.jumlah;
+    else users[t.username].wd += t.jumlah;
+    users[t.username].cnt++;
+  });
+  const ws_data = [
+    ['Username','Total Deposit','Total Withdraw','Net Balance','Jumlah Transaksi'],
+    ...Object.entries(users).map(([u,d]) => [u, d.depo, d.wd, d.depo-d.wd, d.cnt])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = [{wch:18},{wch:18},{wch:18},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Data User');
+  XLSX.writeFile(wb, `Dashboard_AL_Users_${todayStr()}.xlsx`);
+  showToast('✓ Excel user berhasil diexport!');
+}
+
+// ===== TOAST =====
+function showToast(msg, isErr=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr?' err':'');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ===== INIT =====
+document.getElementById('tx-tanggal').value = todayStr();
+</script>
+</body>
+</html>
